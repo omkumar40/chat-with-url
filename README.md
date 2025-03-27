@@ -51,6 +51,31 @@ streamlit run app.py
 ```
 This will launch the web UI, allowing you to enter URLs, process content, and ask questions based on the scraped data.
 
+## How Crawl4AI is Used for Scraping
+This project uses `crawl4ai` to scrape and extract content from web pages asynchronously. The scraping process works as follows:
+1. The user enters a list of URLs.
+2. `crawl4ai` asynchronously fetches the webpage content using Playwright.
+3. The extracted content is summarized to a 4000-character limit to keep responses concise.
+4. This processed content is stored in `st.session_state` for further analysis using Ollama.
+
+The function responsible for scraping in `app.py` is:
+```python
+async def scrape_urls(urls):
+    """Scrape content from multiple URLs asynchronously using Crawl4AI"""
+    contexts = []
+    async with AsyncWebCrawler() as crawler:
+        tasks = [crawler.arun(url=url) for url in urls]
+        results = await asyncio.gather(*tasks)
+        for url, result in zip(urls, results):
+            if result:
+                contexts.append({
+                    "url": url,
+                    "content": textwrap.shorten(result.markdown, width=4000, placeholder="...")
+                })
+    return contexts
+```
+This ensures efficient and fast content retrieval from multiple web pages.
+
 ## Troubleshooting
 - If `ollama` is not found, ensure it is correctly installed and added to your system's PATH.
 - If Playwright scraping fails, try reinstalling Playwright browsers:
